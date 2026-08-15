@@ -1,101 +1,63 @@
 # Política de seguridad
 
-Astral mantiene un proceso privado para recibir, evaluar y corregir reportes de
-seguridad sobre contratos, scripts y configuración operativa incluidos en este
-repositorio.
+AstralCreditProtocol aplica defensa por capas a custodia, solvencia, oráculos,
+gobierno y operación. Los despliegues deben mantener roles separados, límites
+de mercado explícitos y monitorización independiente de los saldos contables.
 
 ## Versiones mantenidas
 
 | Versión | Estado |
 | --- | --- |
-| Rama `main` | Mantenida |
-| Última etiqueta publicada | Mantenida |
-| Versiones anteriores | Solo si se indica expresamente |
+| `1.0.x` | Mantenida |
+| `< 1.0.0` | Sin mantenimiento |
 
-Los despliegues pueden usar parámetros distintos. Incluye siempre red,
-dirección, bloque y configuración relevante al comunicar un comportamiento
-observado sobre una instancia concreta.
+## Superficie incluida
 
-## Alcance
+Contratos en `src/`, scripts de `script/`, SDK, CI y parámetros documentados.
+Quedan fuera contratos modificados por terceros, credenciales externas,
+frontends no incluidos y disponibilidad de proveedores RPC sin efecto on‑chain.
 
-Se consideran dentro del alcance:
+## Invariantes críticas
 
-- contratos en `src/`;
-- vaults de colateral y tokens de recibo;
-- contabilidad de deuda, suministro, índices y reservas;
-- validaciones de borrow, withdraw y liquidación;
-- oráculos y adaptadores de precio;
-- modelos de tipos;
-- configuración de roles, pausas y parámetros;
-- scripts mantenidos en este repositorio;
-- vistas cuando influyen en decisiones operativas.
+```mermaid
+flowchart TD
+    C["Cash real"] --> A{"Conciliación"}
+    S["Supply, borrow y reservas"] --> A
+    A -->|"Correcta"| P["Validar precios e índices"]
+    A -->|"Divergente"| X["Pausar y preservar evidencia"]
+    P --> H{"Health y caps válidos"}
+    H -->|"Sí"| O["Permitir operación"]
+    H -->|"No"| B["Bloquear o sanear"]
+    O --> Q["Checkpoint por quórum"]
+```
 
-Normalmente quedan fuera:
+- `totalBorrowAssets` no debe superar el cap de deuda.
+- `totalSupplyAssets` no debe superar el cap de suministro.
+- las reservas no se consideran liquidez disponible para usuarios;
+- ningún precio con edad superior a `priceMaxAge` autoriza una transición;
+- los índices globales sólo avanzan y usan ray;
+- una reducción de colateral debe conservar capacidad suficiente;
+- el timelock sólo ejecuta payloads dentro de su ventana;
+- un checkpoint final enlaza el hash anterior y reúne el quórum vigente.
 
-- credenciales comprometidas fuera del repositorio;
-- interfaces no mantenidas aquí;
-- despliegues de terceros modificados;
-- indisponibilidad de proveedores externos sin impacto contractual;
-- parámetros de mercado no recomendados por operadores del protocolo.
+## Gestión de incidentes
+
+1. Registrar red, bloque, configuración, balances e índices.
+2. Aplicar pausa global o congelación por mercado según el alcance.
+3. Detener cambios de parámetros y conservar operaciones pendientes.
+4. Comparar cash, supply, borrow, reservas y último checkpoint.
+5. Preparar cualquier cambio mediante timelock y simulación reproducible.
+6. Reanudar tras checkpoints consecutivos conciliados.
 
 ## Comunicación privada
 
-Usa el canal privado de avisos de seguridad del repositorio o el contacto
-indicado por los mantenedores. No publiques detalles técnicos en issues, foros,
-redes sociales o canales comunitarios antes de completar la coordinación.
+Usa la pestaña **Security** del repositorio. No publiques detalles técnicos en
+issues. Incluye versión, red, bloque, condiciones previas, impacto económico,
+secuencia mínima y trazas relevantes. No adjuntes claves ni datos personales.
 
-Incluye, si es posible:
+El equipo acusará recibo en un máximo de 72 horas y comunicará la evaluación
+inicial en siete días naturales. La coordinación posterior depende del alcance,
+reproducibilidad y medidas operativas disponibles.
 
-- componente afectado;
-- commit, versión o dirección desplegada;
-- red y bloque de referencia;
-- condiciones previas;
-- comportamiento esperado y observado;
-- impacto técnico y económico;
-- secuencia mínima de verificación;
-- trazas, pruebas o transacciones relevantes;
-- medidas temporales que puedan reducir riesgo.
-
-No adjuntes claves privadas, frases semilla, credenciales ni datos personales.
-Si el material requiere cifrado, solicita primero un canal adecuado.
-
-## Respuesta
-
-El equipo intentará seguir estos plazos:
-
-1. acuse de recibo en dos días laborables;
-2. evaluación inicial en cinco días laborables;
-3. actualización semanal mientras continúe el análisis;
-4. coordinación de corrección, despliegue y comunicación según el alcance
-   confirmado.
-
-La prioridad se determina por fondos en riesgo, reproducibilidad, permisos
-necesarios, alcance entre mercados y disponibilidad de mitigaciones.
-
-## Investigación responsable
-
-Para proteger usuarios y redes:
-
-- trabaja en una red local o fork controlado siempre que sea posible;
-- no accedas a cuentas de terceros;
-- no degradas servicios;
-- no retengas fondos que no te pertenezcan;
-- limita transacciones públicas al mínimo necesario;
-- conserva evidencias suficientes para una verificación segura;
-- coordina la publicación con los mantenedores.
-
-Esta política no autoriza actividad contra sistemas de terceros ni sustituye
-asesoramiento jurídico.
-
-## Dependencias
-
-Los comportamientos de riesgo en dependencias deben comunicarse también a sus
-mantenedores cuando corresponda. Si una dependencia afecta a contratos
-desplegados, permite preparar medidas operativas antes de divulgar detalles.
-
-## Divulgación coordinada
-
-La fecha y el contenido de cualquier publicación se acordarán después de
-disponer de una corrección o de medidas razonables para proteger usuarios. El
-reconocimiento se realizará cuando la persona informante lo solicite y sea
-apropiado.
+Consulta [el modelo de seguridad](./docs/modelo-seguridad.md) y
+[el runbook operativo](./docs/operaciones.md).
