@@ -1,0 +1,13 @@
+{
+  "name": "@solguardlabs/astral-credit-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test sdk/*.test.ts scripts/verify-repository.test.mjs",
+    "test:sdk": "node --test sdk/*.test.ts"
+  }
+}
